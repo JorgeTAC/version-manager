@@ -1,7 +1,7 @@
 {
-  "name": "ng-manager",
+  "name": "manager",
   "version": "1.0.0",
-  "description": "",
+  "description": "A simple cli to manage your angular projects",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -18,15 +18,17 @@
     "shelljs": "0.8.5"
   },
   "devDependencies": {
+    "prettier": "^2.8.4",
     "prettier-config-standard": "^5.0.0",
     "standard": "^17.0.0"
   },
   "eslintConfig": {
     "extends": [
-      "standard"
+      "standard",
+      "prettier"
     ],
     "rules": {
-      "space-before-function-paren": "off"
+      "space-before-function-paren": "warn"
     }
   }
 }
