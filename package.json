@@ -1,0 +1,32 @@
+{
+  "name": "ng-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "prettier": "prettier-config-standard",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@bdsqqq/try": "2.3.1",
+    "@clack/prompts": "0.6.1",
+    "picocolors": "1.0.0",
+    "shelljs": "0.8.5"
+  },
+  "devDependencies": {
+    "prettier-config-standard": "^5.0.0",
+    "standard": "^17.0.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "standard"
+    ],
+    "rules": {
+      "space-before-function-paren": "off"
+    }
+  }
+}
