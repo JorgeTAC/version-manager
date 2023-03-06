@@ -1,5 +1,5 @@
 import shell from 'shelljs'
-import { trytm } from '@bdsqqq/try'
+import pc from 'picocolors'
 
 const INIT_NVM = `
      export NVM_DIR=~/.nvm
@@ -20,21 +20,64 @@ const INIT_NVM = `
 /* await shell.exec(`
    ${INIT_NVM}
     nvm use
+
+    projects
+    architect
+    build
+    configurations
   `) */
 
 export async function getPackages() {
-  const [stdout, error] = await trytm(shell.cat('package.json'))
-  if (error) throw error
-
-  const { dependencies, devDependencies } = JSON.parse(stdout)
-
-  return { dependencies, devDependencies }
+  const stdout = shell.cat('package.json')
+  const { dependencies } = JSON.parse(stdout)
+  return { dependencies }
 }
 
-export async function getSelectedFramework() {
-  console.log(INIT_NVM)
-  const [stdout, error] = await trytm(shell.exec('nvm current'))
-  if (error) throw error
+export async function getNodeVersions() {
+  const versions = shell.exec(
+    `
+  ${INIT_NVM}
+  nvm ls --no-alias`,
+    { silent: true }
+  )
+  return versions
+    .trim()
+    .split('\n')
+    .map((v) => v.replaceAll(' ', '').replace('->', '').replace('v', ''))
+}
 
-  return stdout
+export function getActualFramework({ dependencies, frameworks }) {
+  const keysDependencies = Object.keys(dependencies)
+
+  if (keysDependencies.some((k) => k.includes('@ionic'))) {
+    return { actualFramework: frameworks.find((f) => f.key === 'ionic') }
+  }
+
+  if (keysDependencies.some((k) => k.includes('@angular'))) {
+    return { actualFramework: frameworks.find((f) => f.key === 'angular') }
+  }
+
+  return { actualFramework: null }
+}
+
+export function runProyect({ framework, nodeVersion, envConfig }) {
+  if (envConfig) {
+    console.log(
+      pc.cyan(
+        `Ejecutando: ${framework.command} ${framework.envConfig + envConfig}`
+      )
+    )
+    shell.exec(`
+      ${INIT_NVM}
+      nvm use ${nodeVersion} && ${framework.command} ${
+      framework.envConfig + envConfig
+    }
+    `)
+    return
+  }
+
+  shell.exec(`
+    ${INIT_NVM}
+    nvm use ${nodeVersion} && ${framework.command}
+  `)
 }

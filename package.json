@@ -8,7 +8,6 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "prettier": "prettier-config-standard",
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -18,17 +17,24 @@
     "shelljs": "0.8.5"
   },
   "devDependencies": {
-    "prettier": "^2.8.4",
-    "prettier-config-standard": "^5.0.0",
-    "standard": "^17.0.0"
+    "prettier": "2.8.4",
+    "prettier-config-standard": "5.0.0",
+    "standard": "17.0.0"
   },
   "eslintConfig": {
+    "env": {
+      "es2021": true,
+      "node": true
+    },
     "extends": [
       "standard",
       "prettier"
     ],
     "rules": {
-      "space-before-function-paren": "warn"
+      "no-unused-vars": "off",
+      "no-undef": "off",
+      "no-useless-escape": "off",
+      "no-prototype-builtins": "off"
     }
   }
 }
