@@ -1,40 +1,28 @@
+#!/usr/bin/env node
+
 import pc from 'picocolors'
+import fs from 'fs'
+import path from 'path'
 import { intro, outro, select, spinner, confirm, text } from '@clack/prompts'
-import { frameworks } from './src/frameworks.js'
+import { frameworks } from './frameworks.js'
 import { trytm } from '@bdsqqq/try'
 import {
   getPackages,
   getActualFramework,
   getNodeVersions,
   runProyect,
-} from './src/shell.js'
-
-/* Un intento de usar la librería para evitar el try catch hell */
+} from './shell.js'
+import shell from 'shelljs'
 
 function parseColors(str) {
   return str.replace(/\x1B\[[0-9;]*[mGK]/g, '')
 }
 
-async function introStep() {
+async function main() {
   intro(
     pc.bgWhite('Bienvenido al selector de versiones de ') +
       pc.bgCyan(' Angular y Ionic ')
   )
-
-  const shouldContinue = await confirm({
-    message:
-      pc.cyan('Buscaremos en que framework estás trabajando\n') +
-      pc.cyan('¿Deseas continuar?'),
-  })
-
-  if (!shouldContinue) {
-    outro(pc.cyan('Gracias por usar el selector. Creado por @jorgeTAC'))
-    process.exit(0)
-  }
-}
-
-async function main() {
-  await introStep()
 
   const s = spinner()
   s.start('Buscando package.json')
@@ -47,6 +35,14 @@ async function main() {
           'No se encontró el package.json, por favor ejecuta este comando en la raíz de tu proyecto.'
         )
     )
+    return
+  }
+
+  if (shell.test('-f', 'nvmrc.json')) {
+    s.stop('nvmrc.json encontrado')
+    outro(pc.cyan('Se encontró un archivo nvmrc.json'))
+    const data = JSON.parse(shell.cat('nvmrc.json'))
+    runProyect(data)
     return
   }
 
@@ -105,6 +101,25 @@ async function main() {
   })
 
   outro(pc.cyan('Gracias por usar el selector. Creado por @jorgeTAC'))
+
+  const saveToFile = await confirm({
+    message: pc.cyan(
+      '¿Deseas guardar la información recopilada en un archivo?'
+    ),
+  })
+
+  if (saveToFile) {
+    const filePath = path.join(process.cwd(), 'nvmrc.json')
+
+    const data = {
+      framework: actualFramework,
+      nodeVersion: parseColors(nodeVersion),
+      envConfig: envName || null,
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2))
+  }
+
   runProyect({
     framework: actualFramework,
     nodeVersion: parseColors(nodeVersion),

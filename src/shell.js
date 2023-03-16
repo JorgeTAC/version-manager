@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import shell from 'shelljs'
 import pc from 'picocolors'
 
@@ -43,7 +45,7 @@ export async function getNodeVersions() {
   return versions
     .trim()
     .split('\n')
-    .map((v) => v.replaceAll(' ', '').replace('->', '').replace('v', ''))
+    .map((v) => v.replace(/ /g, '').replace('->', '').replace('v', ''))
 }
 
 export function getActualFramework({ dependencies, frameworks }) {
@@ -76,6 +78,7 @@ export function runProyect({ framework, nodeVersion, envConfig }) {
     return
   }
 
+  console.log(pc.cyan(`Ejecutando: ${framework.command}`))
   shell.exec(`
     ${INIT_NVM}
     nvm use ${nodeVersion} && ${framework.command}
