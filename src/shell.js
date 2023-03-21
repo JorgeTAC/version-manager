@@ -72,7 +72,6 @@ export function runProyect({ framework, nodeVersion, envConfig }) {
   process.stdin.setRawMode(true)
 
   // Pipe parent stdin to child stdin, so child will receive buffer containing `"\u0003"`.
-  process.stdin.pipe(child.stdin)
 
   // eventually exit example
   if (envConfig) {
@@ -82,33 +81,19 @@ export function runProyect({ framework, nodeVersion, envConfig }) {
       )
     )
 
-    shell.env = {
-      ...process.env,
-      HANDLE_SIGINT_IN_CHILD: true,
-    }
-
-    // create a abort signal
-    const abort = new AbortController()
-
-    abort.signal.addEventListener('abort', () => {
-      console.log('abort signal received')
-    })
-
     const child = shell.exec(
       `
-      ${INIT_NVM}
-      nvm use ${nodeVersion} && ${framework.command} ${
+          ${INIT_NVM}
+          nvm use ${nodeVersion} && ${framework.command} ${
         framework.envConfig + envConfig
       }
-    `,
+          `,
       {
         async: true,
-        shell: '/bin/bash',
-        stdio: ['pipe', 'inherit', 'inherit'],
-        signal: abort.signal,
       }
     )
 
+    process.stdin.pipe(child.stdin)
     return child
   }
 
@@ -126,6 +111,6 @@ export function runProyect({ framework, nodeVersion, envConfig }) {
       },
     }
   )
-
+  process.stdin.pipe(child.stdin)
   return child
 }
