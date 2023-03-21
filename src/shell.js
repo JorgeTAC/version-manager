@@ -2,8 +2,14 @@
 
 import shell from 'shelljs'
 import pc from 'picocolors'
+import keypress from 'keypress'
+
+keypress(process.stdin)
+process.stdin.setRawMode(true)
+process.stdin.resume()
 
 const INIT_NVM = `
+    #!/bin/bash
      export NVM_DIR=~/.nvm
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
@@ -18,16 +24,6 @@ const INIT_NVM = `
       nvm $@
     }
 `
-
-/* await shell.exec(`
-   ${INIT_NVM}
-    nvm use
-
-    projects
-    architect
-    build
-    configurations
-  `) */
 
 export async function getPackages() {
   const stdout = shell.cat('package.json')
@@ -63,24 +59,73 @@ export function getActualFramework({ dependencies, frameworks }) {
 }
 
 export function runProyect({ framework, nodeVersion, envConfig }) {
+  // Detect ctrl+c in parent process
+  process.stdin.on('data', function (data) {
+    if (data == '\u0003') {
+      console.log(pc.bgRed('parent received SIGINT'))
+      process.exit()
+    }
+    process.stdout.write('Captured Key : ' + data + '\n')
+  })
+
+  // Set `process.stdin` into raw mode so that it emits a buffer containing `"\u0003"` when ctrl+c is pressed
+  process.stdin.setRawMode(true)
+
+  // Pipe parent stdin to child stdin, so child will receive buffer containing `"\u0003"`.
+  process.stdin.pipe(child.stdin)
+
+  // eventually exit example
   if (envConfig) {
     console.log(
       pc.cyan(
         `Ejecutando: ${framework.command} ${framework.envConfig + envConfig}`
       )
     )
-    shell.exec(`
+
+    shell.env = {
+      ...process.env,
+      HANDLE_SIGINT_IN_CHILD: true,
+    }
+
+    // create a abort signal
+    const abort = new AbortController()
+
+    abort.signal.addEventListener('abort', () => {
+      console.log('abort signal received')
+    })
+
+    const child = shell.exec(
+      `
       ${INIT_NVM}
       nvm use ${nodeVersion} && ${framework.command} ${
-      framework.envConfig + envConfig
-    }
-    `)
-    return
+        framework.envConfig + envConfig
+      }
+    `,
+      {
+        async: true,
+        shell: '/bin/bash',
+        stdio: ['pipe', 'inherit', 'inherit'],
+        signal: abort.signal,
+      }
+    )
+
+    return child
   }
 
   console.log(pc.cyan(`Ejecutando: ${framework.command}`))
-  shell.exec(`
+  const child = shell.exec(
+    `
     ${INIT_NVM}
     nvm use ${nodeVersion} && ${framework.command}
-  `)
+  `,
+    {
+      async: true,
+      env: {
+        ...process.env,
+        HANDLE_SIGINT_IN_CHILD: true,
+      },
+    }
+  )
+
+  return child
 }

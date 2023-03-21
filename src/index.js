@@ -14,6 +14,14 @@ import {
 } from './shell.js'
 import shell from 'shelljs'
 
+function detectKeyboardInterrupt(child) {
+  process.on('SIGINT', function () {
+    console.log(pc.red('Keyboard interrupt detected.'))
+    child.kill()
+    callAmount++
+  })
+}
+
 function parseColors(str) {
   return str.replace(/\x1B\[[0-9;]*[mGK]/g, '')
 }
@@ -21,7 +29,7 @@ function parseColors(str) {
 async function main() {
   intro(
     pc.bgWhite('Bienvenido al selector de versiones de ') +
-      pc.bgCyan(' Angular y Ionic ')
+      pc.bgCyan(' Angular y Ionic 🌳 ')
   )
 
   const s = spinner()
@@ -42,7 +50,10 @@ async function main() {
     s.stop('nvmrc.json encontrado')
     outro(pc.cyan('Se encontró un archivo nvmrc.json'))
     const data = JSON.parse(shell.cat('nvmrc.json'))
-    runProyect(data)
+    console.log(pc.red('Iniciando proyecto...'))
+    const child = runProyect(data)
+    detectKeyboardInterrupt(child)
+
     return
   }
 
@@ -120,11 +131,13 @@ async function main() {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2))
   }
 
-  runProyect({
+  const child = runProyect({
     framework: actualFramework,
     nodeVersion: parseColors(nodeVersion),
     envConfig: envName,
   })
+
+  detectKeyboardInterrupt(child)
 }
 
 main()
