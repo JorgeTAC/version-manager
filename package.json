@@ -1,6 +1,6 @@
 {
   "name": "nvmpls",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "description": "A simple cli to manage your angular projects",
   "main": "index.js",
   "type": "module",
@@ -14,7 +14,7 @@
   "dependencies": {
     "@bdsqqq/try": "2.3.1",
     "@clack/prompts": "0.6.1",
-    "keypress": "^0.2.1",
+    "keypress": "0.2.1",
     "picocolors": "1.0.0",
     "shelljs": "0.8.5"
   },

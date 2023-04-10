@@ -14,16 +14,42 @@ import {
 } from './shell.js'
 import shell from 'shelljs'
 
-function detectKeyboardInterrupt(child) {
-  process.on('SIGINT', function () {
-    console.log(pc.red('Keyboard interrupt detected.'))
-    child.kill()
-    callAmount++
+function ListenProyect({ child, framework, nodeVersion, envConfig }) {
+  child.on('exit', async (code) => {
+    if (!framework?.defaultPort) process.exit(code)
+
+    console.log(pc.bgRed('El puerto está ocupado, porfavor selecciona otro'))
+    const port = changePort()
+    if (port) {
+      const child = runProyect({
+        framework,
+        nodeVersion,
+        envConfig,
+        port,
+      })
+
+      ListenProyect({ child, framework, nodeVersion, envConfig, port })
+    }
   })
 }
 
 function parseColors(str) {
   return str.replace(/\x1B\[[0-9;]*[mGK]/g, '')
+}
+
+async function changePort() {
+  return text({
+    message: pc.cyan('Porfavor ingresa el puerto que deseas usar'),
+    placeholder: 'Escribe el puerto',
+    validate: (value) => {
+      if (value === '') {
+        return 'Porfavor ingresa un puerto'
+      }
+      if (isNaN(value)) {
+        return 'Porfavor ingresa un número'
+      }
+    },
+  })
 }
 
 async function main() {
@@ -48,12 +74,20 @@ async function main() {
 
   if (shell.test('-f', 'nvmrc.json')) {
     s.stop('nvmrc.json encontrado')
-    outro(pc.cyan('Se encontró un archivo nvmrc.json'))
     const data = JSON.parse(shell.cat('nvmrc.json'))
+    const change = await confirm({
+      message: pc.cyan('Deseas cambiar el puerto?'),
+    })
+    if (change) {
+      const port = await changePort()
+      if (port) {
+        data.port = port
+      }
+    }
+    outro(pc.cyan('Se encontró un archivo nvmrc.json'))
     console.log(pc.red('Iniciando proyecto...'))
     const child = runProyect(data)
-    detectKeyboardInterrupt(child)
-
+    ListenProyect({ child, ...data })
     return
   }
 
@@ -137,7 +171,12 @@ async function main() {
     envConfig: envName,
   })
 
-  detectKeyboardInterrupt(child)
+  ListenProyect({
+    child,
+    framework: actualFramework,
+    nodeVersion: parseColors(nodeVersion),
+    envConfig: envName,
+  })
 }
 
 main()

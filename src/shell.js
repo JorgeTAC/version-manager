@@ -58,59 +58,34 @@ export function getActualFramework({ dependencies, frameworks }) {
   return { actualFramework: null }
 }
 
-export function runProyect({ framework, nodeVersion, envConfig }) {
-  // Detect ctrl+c in parent process
-  process.stdin.on('data', function (data) {
-    if (data == '\u0003') {
-      console.log(pc.bgRed('parent received SIGINT'))
-      process.exit()
-    }
-    process.stdout.write('Captured Key : ' + data + '\n')
-  })
-
+export function runProyect({ framework, nodeVersion, envConfig, port }) {
   // Set `process.stdin` into raw mode so that it emits a buffer containing `"\u0003"` when ctrl+c is pressed
   process.stdin.setRawMode(true)
 
-  // Pipe parent stdin to child stdin, so child will receive buffer containing `"\u0003"`.
-
-  // eventually exit example
-  if (envConfig) {
-    console.log(
-      pc.cyan(
-        `Ejecutando: ${framework.command} ${framework.envConfig + envConfig}`
-      )
-    )
-
-    const child = shell.exec(
-      `
+  let command = `
           ${INIT_NVM}
-          nvm use ${nodeVersion} && ${framework.command} ${
-        framework.envConfig + envConfig
-      }
-          `,
-      {
-        async: true,
-      }
-    )
+          nvm use ${nodeVersion} && ${framework.command}`
 
-    process.stdin.pipe(child.stdin)
-    return child
+  if (envConfig) {
+    command = command.concat(` ${framework.envConfig + envConfig}`)
   }
 
-  console.log(pc.cyan(`Ejecutando: ${framework.command}`))
-  const child = shell.exec(
-    `
-    ${INIT_NVM}
-    nvm use ${nodeVersion} && ${framework.command}
-  `,
-    {
-      async: true,
-      env: {
-        ...process.env,
-        HANDLE_SIGINT_IN_CHILD: true,
-      },
+  if (port) {
+    command = command.concat(` --port=${port}`)
+  }
+
+  console.log(pc.cyan(`Ejecutando: ${command}`))
+
+  const child = shell.exec(command, {
+    async: true,
+  })
+  process.stdin.on('data', function (data) {
+    if (data == '\u0003') {
+      console.log(pc.bgRed('parent received SIGINT'))
+      child.kill()
+      process.exit()
     }
-  )
+  })
   process.stdin.pipe(child.stdin)
   return child
 }

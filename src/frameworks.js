@@ -6,12 +6,14 @@ export const frameworks = [
     name: 'Angular',
     command: 'ng serve',
     envConfig: '--configuration=',
+    defaultPort: 4200,
   },
   {
     key: 'ionic',
     name: 'Ionic',
     command: 'ionic serve',
     envConfig: '--configuration=',
+    defaultPort: 8100,
   },
   {
     key: 'react',
